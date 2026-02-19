@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { dashboardAPI } from '../utils/api';
+import StatsCard from '../components/StatsCard';
+import DataTable from '../components/DataTable';
+import Badge from '../components/Badge';
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
@@ -14,43 +17,36 @@ export default function Dashboard() {
 
   const { overview, monthly, loyaltyDistribution, topStones, topCategories, recentOrders, upcomingReminders, avgFeedback, activeCampaigns, revenueTrend } = data;
 
+  const orderColumns = [
+    { key: 'customer_name', label: 'Customer', cellStyle: { fontWeight: 500 } },
+    { key: 'total_amount', label: 'Amount', render: (val) => `Rs. ${val?.toLocaleString()}` },
+    { key: 'order_date', label: 'Date', render: (val) => <span className="text-gray text-sm">{new Date(val).toLocaleDateString()}</span> },
+    { key: 'channel', label: 'Channel', render: (val) => <Badge variant={val === 'online' ? 'blue' : 'amber'}>{val}</Badge> }
+  ];
+
+  const reminderColumns = [
+    { key: 'customer_name', label: 'Customer', cellStyle: { fontWeight: 500 } },
+    { key: 'type', label: 'Type', render: (val) => <Badge variant={getTypeBadge(val).replace('badge-', '')}>{formatType(val)}</Badge> },
+    { key: 'send_date', label: 'Date', render: (val) => <span className="text-gray text-sm">{new Date(val).toLocaleDateString()}</span> }
+  ];
+
+  const campaignColumns = [
+    { key: 'name', label: 'Campaign', cellStyle: { fontWeight: 500 } },
+    { key: 'type', label: 'Type' },
+    { key: 'scheduled_date', label: 'Scheduled', render: (val) => <span className="text-sm text-gray">{val ? new Date(val).toLocaleDateString() : '—'}</span> },
+    { key: 'status', label: 'Status', render: (val) => <Badge variant={val === 'scheduled' ? 'blue' : 'amber'}>{val}</Badge> }
+  ];
+
   return (
     <div>
       {/* Stats Grid */}
       <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon">👥</div>
-          <div className="stat-label">Total Customers</div>
-          <div className="stat-value">{overview.totalCustomers}</div>
-          <div className="stat-sub">+{monthly.newCustomers} this month</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">📦</div>
-          <div className="stat-label">Total Orders</div>
-          <div className="stat-value">{overview.totalOrders}</div>
-          <div className="stat-sub">{monthly.orders} this month</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">💰</div>
-          <div className="stat-label">Revenue</div>
-          <div className="stat-value">Rs. {overview.totalRevenue?.toLocaleString()}</div>
-          <div className="stat-sub">Rs. {monthly.revenue?.toLocaleString()} this month</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">💎</div>
-          <div className="stat-label">Products</div>
-          <div className="stat-value">{overview.totalProducts}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">🔔</div>
-          <div className="stat-label">Pending Reminders</div>
-          <div className="stat-value">{overview.pendingReminders}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">📨</div>
-          <div className="stat-label">Messages Sent</div>
-          <div className="stat-value">{overview.messagesSent}</div>
-        </div>
+        <StatsCard icon="👥" label="Total Customers" value={overview.totalCustomers} sub={`+${monthly.newCustomers} this month`} />
+        <StatsCard icon="📦" label="Total Orders" value={overview.totalOrders} sub={`${monthly.orders} this month`} />
+        <StatsCard icon="💰" label="Revenue" value={`Rs. ${overview.totalRevenue?.toLocaleString()}`} sub={`Rs. ${monthly.revenue?.toLocaleString()} this month`} />
+        <StatsCard icon="💎" label="Products" value={overview.totalProducts} />
+        <StatsCard icon="🔔" label="Pending Reminders" value={overview.pendingReminders} />
+        <StatsCard icon="📨" label="Messages Sent" value={overview.messagesSent} />
       </div>
 
       <div className="grid-2">
@@ -60,26 +56,7 @@ export default function Dashboard() {
             <h3>📦 Recent Orders</h3>
           </div>
           <div className="card-body" style={{ padding: 0 }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Customer</th>
-                  <th>Amount</th>
-                  <th>Date</th>
-                  <th>Channel</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentOrders?.map(o => (
-                  <tr key={o.id}>
-                    <td style={{ fontWeight: 500 }}>{o.customer_name}</td>
-                    <td>Rs. {o.total_amount?.toLocaleString()}</td>
-                    <td className="text-gray text-sm">{new Date(o.order_date).toLocaleDateString()}</td>
-                    <td><span className={`badge ${o.channel === 'online' ? 'badge-blue' : 'badge-amber'}`}>{o.channel}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <DataTable columns={orderColumns} data={recentOrders} emptyMessage="No recent orders" />
           </div>
         </div>
 
@@ -89,24 +66,7 @@ export default function Dashboard() {
             <h3>🔔 Upcoming Reminders</h3>
           </div>
           <div className="card-body" style={{ padding: 0 }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Customer</th>
-                  <th>Type</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {upcomingReminders?.map(r => (
-                  <tr key={r.id}>
-                    <td style={{ fontWeight: 500 }}>{r.customer_name}</td>
-                    <td><span className={`badge ${getTypeBadge(r.type)}`}>{formatType(r.type)}</span></td>
-                    <td className="text-gray text-sm">{new Date(r.send_date).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <DataTable columns={reminderColumns} data={upcomingReminders} emptyMessage="No upcoming reminders" />
           </div>
         </div>
       </div>
@@ -134,7 +94,7 @@ export default function Dashboard() {
             {topStones?.map((s, i) => (
               <div key={s.stone_type} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--gray-100)' }}>
                 <span>{getStoneEmoji(s.stone_type)} {s.stone_type}</span>
-                <span className="badge badge-gold">{s.count} sold</span>
+                <Badge variant="gold">{s.count} sold</Badge>
               </div>
             ))}
           </div>
@@ -161,21 +121,7 @@ export default function Dashboard() {
         <div className="card mt-3">
           <div className="card-header"><h3>📣 Active Campaigns</h3></div>
           <div className="card-body" style={{ padding: 0 }}>
-            <table className="data-table">
-              <thead>
-                <tr><th>Campaign</th><th>Type</th><th>Scheduled</th><th>Status</th></tr>
-              </thead>
-              <tbody>
-                {activeCampaigns.map(c => (
-                  <tr key={c.id}>
-                    <td style={{ fontWeight: 500 }}>{c.name}</td>
-                    <td>{c.type}</td>
-                    <td className="text-sm text-gray">{c.scheduled_date ? new Date(c.scheduled_date).toLocaleDateString() : '—'}</td>
-                    <td><span className={`badge ${c.status === 'scheduled' ? 'badge-blue' : 'badge-amber'}`}>{c.status}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <DataTable columns={campaignColumns} data={activeCampaigns} />
           </div>
         </div>
       )}

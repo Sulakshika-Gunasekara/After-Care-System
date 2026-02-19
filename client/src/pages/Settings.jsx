@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import DataTable from '../components/DataTable';
+import Badge, { TierBadge } from '../components/Badge';
 
 export default function Settings() {
   const [health, setHealth] = useState(null);
@@ -26,15 +28,43 @@ export default function Settings() {
     }
   };
 
+  const reminderData = [
+    { stage: '1', timing: 'Immediately', type: 'welcome', description: 'Thank you message + care guide', badge: 'green' },
+    { stage: '2', timing: '7 days', type: 'review_request', description: 'Ask for product review / feedback', badge: 'purple' },
+    { stage: '3', timing: '30 days', type: 'cleaning_reminder', description: 'Silver cleaning reminder', badge: 'blue' },
+    { stage: '4', timing: '90 days', type: 'maintenance_reminder', description: 'Professional maintenance suggestion', badge: 'amber' },
+    { stage: '5', timing: '180 days', type: 'cross_sell', description: 'Complementary product recommendation', badge: 'gold' },
+    { stage: '6', timing: '365 days', type: 'tarnish_alert', description: 'Annual tarnish prevention reminder', badge: 'amber' },
+  ];
+
+  const reminderColumns = [
+    { key: 'stage', label: 'Stage', cellStyle: { fontWeight: 600 } },
+    { key: 'timing', label: 'Timing' },
+    { key: 'type', label: 'Type', render: (t, r) => <Badge variant={r.badge}>{t}</Badge> },
+    { key: 'description', label: 'Description' }
+  ];
+
+  const loyaltyData = [
+    { tier: 'Silver Member', min: 3, benefits: '5% discount, priority cleaning, birthday gift' },
+    { tier: 'Ruby Member', min: 6, benefits: '10% discount, free polishing, exclusive previews, birthday gift' },
+    { tier: 'Sapphire Elite', min: 10, benefits: '15% discount, free maintenance, VIP events, custom designs, birthday gift' },
+  ];
+
+  const loyaltyColumns = [
+    { key: 'tier', label: 'Tier', render: (t) => <TierBadge tier={t} /> },
+    { key: 'min', label: 'Min Purchases', cellStyle: { fontWeight: 600 } },
+    { key: 'benefits', label: 'Benefits', cellStyle: { fontSize: '0.85rem' } }
+  ];
+
   return (
     <div>
       {/* System Status */}
       <div className="card mb-3">
         <div className="card-header">
           <h3>🖥️ System Status</h3>
-          <span className={`badge ${health?.status === 'ok' ? 'badge-green' : 'badge-red'}`}>
+          <Badge variant={health?.status === 'ok' ? 'green' : 'red'}>
             {health?.status === 'ok' ? '● Online' : '● Offline'}
-          </span>
+          </Badge>
         </div>
         <div className="card-body">
           <div className="grid-2">
@@ -59,27 +89,14 @@ export default function Settings() {
         <div className="card-header">
           <h3>🔔 Reminder Schedule</h3>
         </div>
-        <div className="card-body">
-          <p className="text-sm text-gray mb-2">Automated reminder processing runs via cron. Below is the lifecycle triggered on each new order:</p>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Stage</th>
-                <th>Timing</th>
-                <th>Type</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td style={{ fontWeight: 600 }}>1</td><td>Immediately</td><td><span className="badge badge-green">welcome</span></td><td>Thank you message + care guide</td></tr>
-              <tr><td style={{ fontWeight: 600 }}>2</td><td>7 days</td><td><span className="badge badge-purple">review_request</span></td><td>Ask for product review / feedback</td></tr>
-              <tr><td style={{ fontWeight: 600 }}>3</td><td>30 days</td><td><span className="badge badge-blue">cleaning_reminder</span></td><td>Silver cleaning reminder</td></tr>
-              <tr><td style={{ fontWeight: 600 }}>4</td><td>90 days</td><td><span className="badge badge-amber">maintenance_reminder</span></td><td>Professional maintenance suggestion</td></tr>
-              <tr><td style={{ fontWeight: 600 }}>5</td><td>180 days</td><td><span className="badge badge-gold">cross_sell</span></td><td>Complementary product recommendation</td></tr>
-              <tr><td style={{ fontWeight: 600 }}>6</td><td>365 days</td><td><span className="badge badge-amber">tarnish_alert</span></td><td>Annual tarnish prevention reminder</td></tr>
-            </tbody>
-          </table>
-          <p className="text-sm text-gray mt-2">⏰ Cron runs every hour to process pending reminders.</p>
+        <div className="card-body" style={{ padding: 0 }}>
+          <div style={{ padding: '16px 20px 0' }}>
+            <p className="text-sm text-gray mb-2">Automated reminder processing runs via cron. Below is the lifecycle triggered on each new order:</p>
+          </div>
+          <DataTable columns={reminderColumns} data={reminderData} />
+          <div style={{ padding: '0 20px 16px' }}>
+            <p className="text-sm text-gray mt-2">⏰ Cron runs every hour to process pending reminders.</p>
+          </div>
         </div>
       </div>
 
@@ -103,29 +120,8 @@ export default function Settings() {
         <div className="card-header">
           <h3>🏆 Loyalty Tier Thresholds</h3>
         </div>
-        <div className="card-body">
-          <table className="data-table">
-            <thead>
-              <tr><th>Tier</th><th>Min Purchases</th><th>Benefits</th></tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><span className="tier-badge tier-silver">🥉 Silver Member</span></td>
-                <td style={{ fontWeight: 600 }}>3</td>
-                <td className="text-sm">5% discount, priority cleaning, birthday gift</td>
-              </tr>
-              <tr>
-                <td><span className="tier-badge tier-ruby">🥈 Ruby Member</span></td>
-                <td style={{ fontWeight: 600 }}>6</td>
-                <td className="text-sm">10% discount, free polishing, exclusive previews, birthday gift</td>
-              </tr>
-              <tr>
-                <td><span className="tier-badge tier-sapphire">🥇 Sapphire Elite</span></td>
-                <td style={{ fontWeight: 600 }}>10</td>
-                <td className="text-sm">15% discount, free maintenance, VIP events, custom designs, birthday gift</td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="card-body" style={{ padding: 0 }}>
+          <DataTable columns={loyaltyColumns} data={loyaltyData} />
         </div>
       </div>
 
@@ -161,7 +157,7 @@ function ChannelCard({ icon, name, status, description }) {
     <div style={{ background: 'var(--gray-50)', borderRadius: 'var(--radius-sm)', padding: '20px', textAlign: 'center' }}>
       <div style={{ fontSize: '2rem', marginBottom: '8px' }}>{icon}</div>
       <h4 style={{ fontSize: '0.95rem', marginBottom: '4px' }}>{name}</h4>
-      <span className="badge badge-amber" style={{ marginBottom: '8px' }}>{status}</span>
+      <Badge variant="amber" style={{ marginBottom: '8px' }}>{status}</Badge>
       <p className="text-sm text-gray" style={{ marginTop: '8px' }}>{description}</p>
     </div>
   );
