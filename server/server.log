@@ -1,6 +1,0 @@
-
-💎 Chamathka Care+ Server running on http://localhost:5000
-📊 Dashboard: http://localhost:5000/api/dashboard/stats
-👥 Customers: http://localhost:5000/api/customers
-📦 Products:  http://localhost:5000/api/products
-🔔 Reminders: http://localhost:5000/api/reminders
