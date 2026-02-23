@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { feedbackAPI } from '../utils/api';
+import StatsCard from '../components/StatsCard';
+import Badge from '../components/Badge';
 
 export default function Feedback() {
   const [feedbackList, setFeedbackList] = useState([]);
@@ -15,40 +17,15 @@ export default function Feedback() {
 
   if (loading) return <div className="loading"><div className="loading-spinner" /></div>;
 
-  const renderStars = (val) => {
-    if (!val) return '—';
-    return '★'.repeat(Math.round(val)) + '☆'.repeat(5 - Math.round(val));
-  };
-
   return (
     <div>
       {/* Stats */}
       <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
-        <div className="stat-card">
-          <div className="stat-icon">📋</div>
-          <div className="stat-label">Total Reviews</div>
-          <div className="stat-value">{stats.total || 0}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">😊</div>
-          <div className="stat-label">Satisfaction</div>
-          <div className="stat-value" style={{ color: 'var(--gold)' }}>{stats.avg_satisfaction || '—'}/5</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">💎</div>
-          <div className="stat-label">Stone Quality</div>
-          <div className="stat-value" style={{ color: 'var(--gold)' }}>{stats.avg_stone_quality || '—'}/5</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">📦</div>
-          <div className="stat-label">Packaging</div>
-          <div className="stat-value" style={{ color: 'var(--gold)' }}>{stats.avg_packaging || '—'}/5</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">🚚</div>
-          <div className="stat-label">Delivery</div>
-          <div className="stat-value" style={{ color: 'var(--gold)' }}>{stats.avg_delivery || '—'}/5</div>
-        </div>
+        <StatsCard icon="📋" label="Total Reviews" value={stats.total || 0} />
+        <StatsCard icon="😊" label="Satisfaction" value={<span style={{ color: 'var(--gold)' }}>{stats.avg_satisfaction || '—'}/5</span>} />
+        <StatsCard icon="💎" label="Stone Quality" value={<span style={{ color: 'var(--gold)' }}>{stats.avg_stone_quality || '—'}/5</span>} />
+        <StatsCard icon="📦" label="Packaging" value={<span style={{ color: 'var(--gold)' }}>{stats.avg_packaging || '—'}/5</span>} />
+        <StatsCard icon="🚚" label="Delivery" value={<span style={{ color: 'var(--gold)' }}>{stats.avg_delivery || '—'}/5</span>} />
       </div>
 
       {/* Review Cards */}
@@ -80,7 +57,7 @@ export default function Feedback() {
               {f.discount_code && (
                 <div className="mt-1 flex items-center gap-2">
                   <span className="text-sm text-gray">Discount code:</span>
-                  <span className="badge badge-green" style={{ fontFamily: 'monospace' }}>{f.discount_code}</span>
+                  <Badge variant="green" style={{ fontFamily: 'monospace' }}>{f.discount_code}</Badge>
                 </div>
               )}
             </div>

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { productsAPI } from '../utils/api';
+import Modal from '../components/Modal';
+import Badge from '../components/Badge';
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -63,9 +65,9 @@ export default function Products() {
               </div>
               <div style={{ padding: '16px 24px' }}>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                  {p.stone_type && <span className="badge badge-gold">{p.stone_type}</span>}
-                  <span className="badge badge-blue">{p.category}</span>
-                  <span className="badge badge-purple">{p.metal_finish}</span>
+                  {p.stone_type && <Badge variant="gold">{p.stone_type}</Badge>}
+                  <Badge variant="blue">{p.category}</Badge>
+                  <Badge variant="purple">{p.metal_finish}</Badge>
                 </div>
                 <p className="text-sm text-gray" style={{ marginBottom: '12px' }}>{p.description || 'No description'}</p>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -78,7 +80,7 @@ export default function Products() {
                   </div>
                 </div>
                 <div className="mt-1">
-                  <span className={`badge ${p.in_stock ? 'badge-green' : 'badge-red'}`}>{p.in_stock ? 'In Stock' : 'Out of Stock'}</span>
+                  <Badge variant={p.in_stock ? 'green' : 'red'}>{p.in_stock ? 'In Stock' : 'Out of Stock'}</Badge>
                 </div>
               </div>
             </div>
@@ -100,67 +102,62 @@ function ProductModal({ data, onSave, onClose }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
+  const footer = (
+    <>
+      <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+      <button className="btn btn-primary" onClick={() => onSave(form)}>💎 Save Product</button>
+    </>
+  );
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>{data?.id ? 'Edit Product' : 'Add New Product'}</h3>
-          <button className="modal-close" onClick={onClose}>×</button>
+    <Modal title={data?.id ? 'Edit Product' : 'Add New Product'} onClose={onClose} footer={footer}>
+      <div className="form-group">
+        <label className="form-label">Product Name *</label>
+        <input className="form-input" value={form.name} onChange={e => set('name', e.target.value)} />
+      </div>
+      <div className="form-row">
+        <div className="form-group">
+          <label className="form-label">Stone Type</label>
+          <select className="form-select" value={form.stone_type} onChange={e => set('stone_type', e.target.value)}>
+            <option value="">None</option>
+            {['Emerald','Ruby','Sapphire','Pearl','Diamond','Amethyst','Garnet','Topaz','Opal','Tanzanite','Peridot'].map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
         </div>
-        <div className="modal-body">
-          <div className="form-group">
-            <label className="form-label">Product Name *</label>
-            <input className="form-input" value={form.name} onChange={e => set('name', e.target.value)} />
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">Stone Type</label>
-              <select className="form-select" value={form.stone_type} onChange={e => set('stone_type', e.target.value)}>
-                <option value="">None</option>
-                {['Emerald','Ruby','Sapphire','Pearl','Diamond','Amethyst','Garnet','Topaz','Opal','Tanzanite','Peridot'].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Category *</label>
-              <select className="form-select" value={form.category} onChange={e => set('category', e.target.value)}>
-                <option value="">Select...</option>
-                {['Earrings','Necklace','Ring','Bracelet','Set','Pendant','Anklet'].map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">Price (Rs.) *</label>
-              <input className="form-input" type="number" value={form.price} onChange={e => set('price', Number(e.target.value))} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Collection</label>
-              <input className="form-input" value={form.collection} onChange={e => set('collection', e.target.value)} />
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">Metal Finish</label>
-              <input className="form-input" value={form.metal_finish} onChange={e => set('metal_finish', e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">In Stock</label>
-              <select className="form-select" value={form.in_stock} onChange={e => set('in_stock', Number(e.target.value))}>
-                <option value={1}>Yes</option>
-                <option value={0}>No</option>
-              </select>
-            </div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Description</label>
-            <textarea className="form-textarea" value={form.description} onChange={e => set('description', e.target.value)} />
-          </div>
-        </div>
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={() => onSave(form)}>💎 Save Product</button>
+        <div className="form-group">
+          <label className="form-label">Category *</label>
+          <select className="form-select" value={form.category} onChange={e => set('category', e.target.value)}>
+            <option value="">Select...</option>
+            {['Earrings','Necklace','Ring','Bracelet','Set','Pendant','Anklet'].map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
         </div>
       </div>
-    </div>
+      <div className="form-row">
+        <div className="form-group">
+          <label className="form-label">Price (Rs.) *</label>
+          <input className="form-input" type="number" value={form.price} onChange={e => set('price', Number(e.target.value))} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Collection</label>
+          <input className="form-input" value={form.collection} onChange={e => set('collection', e.target.value)} />
+        </div>
+      </div>
+      <div className="form-row">
+        <div className="form-group">
+          <label className="form-label">Metal Finish</label>
+          <input className="form-input" value={form.metal_finish} onChange={e => set('metal_finish', e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">In Stock</label>
+          <select className="form-select" value={form.in_stock} onChange={e => set('in_stock', Number(e.target.value))}>
+            <option value={1}>Yes</option>
+            <option value={0}>No</option>
+          </select>
+        </div>
+      </div>
+      <div className="form-group">
+        <label className="form-label">Description</label>
+        <textarea className="form-textarea" value={form.description} onChange={e => set('description', e.target.value)} />
+      </div>
+    </Modal>
   );
 }

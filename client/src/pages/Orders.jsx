@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ordersAPI, customersAPI, productsAPI } from '../utils/api';
+import DataTable from '../components/DataTable';
+import Modal from '../components/Modal';
+import Badge from '../components/Badge';
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
@@ -14,6 +17,17 @@ export default function Orders() {
 
   useEffect(() => { load(); }, []);
 
+  const columns = [
+    { key: 'id', label: '#', cellStyle: { fontWeight: 600 }, render: (id) => `#${id}` },
+    { key: 'customer_name', label: 'Customer', cellStyle: { fontWeight: 500 } },
+    { key: 'item_names', label: 'Items', cellStyle: { color: 'var(--gray)', fontSize: '0.85rem' }, render: (val) => val || '—' },
+    { key: 'total_amount', label: 'Amount', cellStyle: { fontWeight: 600 }, render: (val) => `Rs. ${val?.toLocaleString()}` },
+    { key: 'occasion', label: 'Occasion', render: (val) => val ? <Badge variant="purple">{val}</Badge> : '—' },
+    { key: 'channel', label: 'Channel', render: (val) => <Badge variant={val === 'online' ? 'blue' : 'amber'}>{val}</Badge> },
+    { key: 'order_date', label: 'Date', cellStyle: { color: 'var(--gray)', fontSize: '0.85rem' }, render: (val) => new Date(val).toLocaleDateString() },
+    { key: 'status', label: 'Status', render: (val) => <Badge variant="green">{val}</Badge> }
+  ];
+
   return (
     <div>
       <div className="flex justify-between items-center mb-2">
@@ -26,36 +40,7 @@ export default function Orders() {
           <h3>📦 All Orders ({orders.length})</h3>
         </div>
         <div className="card-body" style={{ padding: 0 }}>
-          {loading ? <div className="loading"><div className="loading-spinner" /></div> : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Customer</th>
-                  <th>Items</th>
-                  <th>Amount</th>
-                  <th>Occasion</th>
-                  <th>Channel</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map(o => (
-                  <tr key={o.id}>
-                    <td style={{ fontWeight: 600 }}>#{o.id}</td>
-                    <td style={{ fontWeight: 500 }}>{o.customer_name}</td>
-                    <td className="text-sm text-gray">{o.item_names || '—'}</td>
-                    <td style={{ fontWeight: 600 }}>Rs. {o.total_amount?.toLocaleString()}</td>
-                    <td>{o.occasion ? <span className="badge badge-purple">{o.occasion}</span> : '—'}</td>
-                    <td><span className={`badge ${o.channel === 'online' ? 'badge-blue' : 'badge-amber'}`}>{o.channel}</span></td>
-                    <td className="text-sm text-gray">{new Date(o.order_date).toLocaleDateString()}</td>
-                    <td><span className="badge badge-green">{o.status}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+          <DataTable columns={columns} data={orders} loading={loading} />
         </div>
       </div>
 
@@ -100,102 +85,88 @@ function OrderModal({ onClose, onResult }) {
     }
   };
 
+  const footer = (
+    <>
+      <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+      <button className="btn btn-primary" disabled={submitting} onClick={handleSubmit}>
+        {submitting ? 'Processing...' : '💎 Create Order'}
+      </button>
+    </>
+  );
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>📦 New Order</h3>
-          <button className="modal-close" onClick={onClose}>×</button>
+    <Modal title="📦 New Order" onClose={onClose} footer={footer}>
+      <div className="form-group">
+        <label className="form-label">Customer *</label>
+        <select className="form-select" value={form.customer_id} onChange={e => setForm(f => ({ ...f, customer_id: e.target.value }))}>
+          <option value="">Select customer...</option>
+          {customers.map(c => <option key={c.id} value={c.id}>{c.name} — {c.phone}</option>)}
+        </select>
+      </div>
+
+      <div className="form-group">
+        <div className="flex justify-between items-center mb-1">
+          <label className="form-label" style={{ margin: 0 }}>Items *</label>
+          <button className="btn btn-secondary btn-sm" onClick={addItem}>+ Add Item</button>
         </div>
-        <div className="modal-body">
-          <div className="form-group">
-            <label className="form-label">Customer *</label>
-            <select className="form-select" value={form.customer_id} onChange={e => setForm(f => ({ ...f, customer_id: e.target.value }))}>
-              <option value="">Select customer...</option>
-              {customers.map(c => <option key={c.id} value={c.id}>{c.name} — {c.phone}</option>)}
+        {form.items.map((item, i) => (
+          <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+            <select className="form-select" style={{ flex: 1 }} value={item.product_id} onChange={e => updateItem(i, 'product_id', e.target.value)}>
+              <option value="">Select product...</option>
+              {products.map(p => <option key={p.id} value={p.id}>{p.name} — Rs. {p.price?.toLocaleString()}</option>)}
             </select>
+            <input className="form-input" style={{ width: '70px' }} type="number" min="1" value={item.quantity} onChange={e => updateItem(i, 'quantity', e.target.value)} />
+            <button className="btn btn-danger btn-sm" onClick={() => removeItem(i)}>✕</button>
           </div>
+        ))}
+      </div>
 
-          <div className="form-group">
-            <div className="flex justify-between items-center mb-1">
-              <label className="form-label" style={{ margin: 0 }}>Items *</label>
-              <button className="btn btn-secondary btn-sm" onClick={addItem}>+ Add Item</button>
-            </div>
-            {form.items.map((item, i) => (
-              <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                <select className="form-select" style={{ flex: 1 }} value={item.product_id} onChange={e => updateItem(i, 'product_id', e.target.value)}>
-                  <option value="">Select product...</option>
-                  {products.map(p => <option key={p.id} value={p.id}>{p.name} — Rs. {p.price?.toLocaleString()}</option>)}
-                </select>
-                <input className="form-input" style={{ width: '70px' }} type="number" min="1" value={item.quantity} onChange={e => updateItem(i, 'quantity', e.target.value)} />
-                <button className="btn btn-danger btn-sm" onClick={() => removeItem(i)}>✕</button>
-              </div>
-            ))}
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">Occasion</label>
-              <select className="form-select" value={form.occasion} onChange={e => setForm(f => ({ ...f, occasion: e.target.value }))}>
-                <option value="">None</option>
-                {["Valentine's", 'Birthday', 'Anniversary', 'Wedding', 'Christmas', 'Other'].map(o => <option key={o} value={o}>{o}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Gift For</label>
-              <input className="form-input" placeholder="Self, Partner, etc." value={form.gift_for} onChange={e => setForm(f => ({ ...f, gift_for: e.target.value }))} />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Channel</label>
-            <select className="form-select" value={form.channel} onChange={e => setForm(f => ({ ...f, channel: e.target.value }))}>
-              <option value="offline">Offline (In-store)</option>
-              <option value="online">Online</option>
-            </select>
-          </div>
+      <div className="form-row">
+        <div className="form-group">
+          <label className="form-label">Occasion</label>
+          <select className="form-select" value={form.occasion} onChange={e => setForm(f => ({ ...f, occasion: e.target.value }))}>
+            <option value="">None</option>
+            {["Valentine's", 'Birthday', 'Anniversary', 'Wedding', 'Christmas', 'Other'].map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
         </div>
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" disabled={submitting} onClick={handleSubmit}>
-            {submitting ? 'Processing...' : '💎 Create Order'}
-          </button>
+        <div className="form-group">
+          <label className="form-label">Gift For</label>
+          <input className="form-input" placeholder="Self, Partner, etc." value={form.gift_for} onChange={e => setForm(f => ({ ...f, gift_for: e.target.value }))} />
         </div>
       </div>
-    </div>
+
+      <div className="form-group">
+        <label className="form-label">Channel</label>
+        <select className="form-select" value={form.channel} onChange={e => setForm(f => ({ ...f, channel: e.target.value }))}>
+          <option value="offline">Offline (In-store)</option>
+          <option value="online">Online</option>
+        </select>
+      </div>
+    </Modal>
   );
 }
 
 function OrderResult({ data, onClose }) {
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>✅ Order Created Successfully!</h3>
-          <button className="modal-close" onClick={onClose}>×</button>
-        </div>
-        <div className="modal-body">
-          <div style={{ textAlign: 'center', padding: '16px 0' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🎉</div>
-            <h4>Order #{data.order?.id}</h4>
-            <p className="text-gray mt-1">Amount: Rs. {data.order?.total_amount?.toLocaleString()}</p>
-          </div>
+  const footer = <button className="btn btn-primary" onClick={onClose}>Done</button>;
 
-          {data.automation && (
-            <div style={{ background: 'var(--green-bg)', borderRadius: 'var(--radius-sm)', padding: '16px', marginTop: '16px' }}>
-              <h4 style={{ color: 'var(--green)', marginBottom: '8px' }}>🤖 Automation Triggered</h4>
-              <p className="text-sm">✅ Welcome message sent</p>
-              <p className="text-sm">✅ {data.automation.reminders_scheduled} reminders scheduled</p>
-              {data.automation.loyalty_update?.changed && (
-                <p className="text-sm">🏆 Loyalty upgraded: {data.automation.loyalty_update.previous} → <strong>{data.automation.loyalty_update.current}</strong></p>
-              )}
-            </div>
+  return (
+    <Modal title="✅ Order Created Successfully!" onClose={onClose} footer={footer}>
+      <div style={{ textAlign: 'center', padding: '16px 0' }}>
+        <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🎉</div>
+        <h4>Order #{data.order?.id}</h4>
+        <p className="text-gray mt-1">Amount: Rs. {data.order?.total_amount?.toLocaleString()}</p>
+      </div>
+
+      {data.automation && (
+        <div style={{ background: 'var(--green-bg)', borderRadius: 'var(--radius-sm)', padding: '16px', marginTop: '16px' }}>
+          <h4 style={{ color: 'var(--green)', marginBottom: '8px' }}>🤖 Automation Triggered</h4>
+          <p className="text-sm">✅ Welcome message sent</p>
+          <p className="text-sm">✅ {data.automation.reminders_scheduled} reminders scheduled</p>
+          {data.automation.loyalty_update?.changed && (
+            <p className="text-sm">🏆 Loyalty upgraded: {data.automation.loyalty_update.previous} → <strong>{data.automation.loyalty_update.current}</strong></p>
           )}
         </div>
-        <div className="modal-footer">
-          <button className="btn btn-primary" onClick={onClose}>Done</button>
-        </div>
-      </div>
-    </div>
+      )}
+    </Modal>
   );
 }

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { loyaltyAPI } from '../utils/api';
+import DataTable from '../components/DataTable';
+import Badge from '../components/Badge';
 
 export default function Loyalty() {
   const [data, setData] = useState(null);
@@ -24,6 +26,36 @@ export default function Loyalty() {
     { name: 'Silver Member', icon: '🥉', color: '#666', bg: '#f0f0f0' },
     { name: 'Ruby Member', icon: '🥈', color: '#c62828', bg: '#fce4ec' },
     { name: 'Sapphire Elite', icon: '🥇', color: '#1565c0', bg: '#e3f2fd' }
+  ];
+
+  const upgradeColumns = [
+    { key: 'name', label: 'Customer', cellStyle: { fontWeight: 500 } },
+    { key: 'loyalty_level', label: 'Current', render: (val) => val || 'Regular', cellStyle: { fontSize: '0.85rem' } },
+    { key: 'next_tier', label: 'Next Tier', render: (val) => <Badge variant="gold">{val}</Badge> },
+    {
+      key: 'purchases_needed',
+      label: 'Needed',
+      render: (val) => (
+        <>
+          <span style={{ fontWeight: 700, color: 'var(--red)' }}>{val}</span>
+          <span className="text-sm text-gray"> purchase{val > 1 ? 's' : ''}</span>
+        </>
+      )
+    }
+  ];
+
+  const historyColumns = [
+    { key: 'customer_name', label: 'Customer', cellStyle: { fontWeight: 500 } },
+    {
+      key: 'new_tier',
+      label: 'Change',
+      render: (val, row) => (
+        <span className="text-sm">
+          {row.previous_tier || 'None'} → <strong style={{ color: 'var(--green)' }}>{val}</strong>
+        </span>
+      )
+    },
+    { key: 'changed_at', label: 'Date', cellStyle: { color: 'var(--gray)', fontSize: '0.85rem' }, render: (val) => new Date(val).toLocaleDateString() }
   ];
 
   return (
@@ -58,27 +90,7 @@ export default function Loyalty() {
             <h3>🚀 Near Upgrade</h3>
           </div>
           <div className="card-body" style={{ padding: 0 }}>
-            <table className="data-table">
-              <thead>
-                <tr><th>Customer</th><th>Current</th><th>Next Tier</th><th>Needed</th></tr>
-              </thead>
-              <tbody>
-                {data.upcomingUpgrades?.map(c => (
-                  <tr key={c.id}>
-                    <td style={{ fontWeight: 500 }}>{c.name}</td>
-                    <td className="text-sm">{c.loyalty_level || 'Regular'}</td>
-                    <td><span className="badge badge-gold">{c.next_tier}</span></td>
-                    <td>
-                      <span style={{ fontWeight: 700, color: 'var(--red)' }}>{c.purchases_needed}</span>
-                      <span className="text-sm text-gray"> purchase{c.purchases_needed > 1 ? 's' : ''}</span>
-                    </td>
-                  </tr>
-                ))}
-                {(!data.upcomingUpgrades || data.upcomingUpgrades.length === 0) && (
-                  <tr><td colSpan={4} className="text-center text-gray">No upcoming upgrades</td></tr>
-                )}
-              </tbody>
-            </table>
+            <DataTable columns={upgradeColumns} data={data.upcomingUpgrades} emptyMessage="No upcoming upgrades" />
           </div>
         </div>
 
@@ -88,25 +100,7 @@ export default function Loyalty() {
             <h3>📜 Tier History</h3>
           </div>
           <div className="card-body" style={{ padding: 0 }}>
-            <table className="data-table">
-              <thead>
-                <tr><th>Customer</th><th>Change</th><th>Date</th></tr>
-              </thead>
-              <tbody>
-                {history.map(h => (
-                  <tr key={h.id}>
-                    <td style={{ fontWeight: 500 }}>{h.customer_name}</td>
-                    <td className="text-sm">
-                      {h.previous_tier || 'None'} → <strong style={{ color: 'var(--green)' }}>{h.new_tier}</strong>
-                    </td>
-                    <td className="text-sm text-gray">{new Date(h.changed_at).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-                {history.length === 0 && (
-                  <tr><td colSpan={3} className="text-center text-gray">No tier changes yet</td></tr>
-                )}
-              </tbody>
-            </table>
+            <DataTable columns={historyColumns} data={history} emptyMessage="No tier changes yet" />
           </div>
         </div>
       </div>
